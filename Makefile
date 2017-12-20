@@ -5,4 +5,4 @@ all:
 	mpicc $(SRC) -o $(BIN)
 
 run: all
-	mpirun $(BIN) -np 2 -hostfile hostfile
+	mpirun -np 8 --hostfile hostfile $(BIN)
