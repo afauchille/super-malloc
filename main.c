@@ -96,6 +96,7 @@ int up_pow2(int n)
 
 /****************************************/
 
+// Check that every node is aware of its parent
 void check_tree(Process *me)
 {
   int data = -1;
@@ -113,13 +114,15 @@ void check_tree(Process *me)
   printf("[%d]: %d is my dad.\n", me->id, data);
 }
 
+
+// Allocate a variable. 
 unsigned long alloc(Process *me)
 {
   unsigned long var_id = -1;
   int status = 0;
   if (me->id == ROOT)
     status = 1; // kind of a token, passing from root to target
-  for (int i = 1; i < me->nb_id * 2; i *= 2) // * 2 in condition is here to make sure all processes go in the first else if (and therefore that leaves can take the alloc)
+  for (int i = 1; i < me->nb_id * 2; i *= 2) // * 2 in condition is here to make sure all processes go in the first else if (and therefore ensure that leaves can take the alloc)
   {
     if (me->id < i / 2)
       ; // already done, test is for clarity purpose
@@ -146,7 +149,7 @@ unsigned long alloc(Process *me)
   MPI_Barrier(MPI_COMM_WORLD);
 
   if (status == 2) {
-    //    printf("[%d] I take the alloc\n", me->id);
+    printf("[%d] I take the alloc\n", me->id);
     var_id = var_alloc(me);
   }
   else if (status == 1)
@@ -166,17 +169,19 @@ unsigned long alloc(Process *me)
       recv_sons_UL(&data1, &data2, me);
       if (data1 != (unsigned long)-1)
 	{
-	  //printf("[%d] Raising s1min_size\n", me->id);
+	  	  printf("[%d] Raising s1min_size\n", me->id);
 	  me->s1min_size += 1;
 	}
       else if (data2 != (unsigned long)-1)
 	{
-	  //printf("[%d] Raising s2min_size\n", me->id);
+	  	  printf("[%d] Raising s2min_size\n", me->id);
 	  me->s2min_size += 1;
 	}
       var_id = min(var_id, min(data1, data2));
     }
   }
+
+  MPI_Barrier(MPI_COMM_WORLD);
 
   if (var_id != (unsigned long)-1 && me->id == ROOT)
     printf("[%d] Var id:(%lu,%lu)\n", me->id, pid_part(var_id), vid_part(var_id));
@@ -204,20 +209,6 @@ int main(int argc, char **argv)
   alloc(me);
   alloc(me);
   alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  
-  /*for (int i = up_pow2(me->nb_id); i != 2; i /= 2)
-    {
-      int ri = i - 2;
-      if (me->id >= ri)
-	; // do nothing
-      else if (me->id >= ri / 2)
-	printf("%d -> %d\n", me->id, (me->id - 1) / 2);
-      else if (me->id >= ri / 4)
-	printf("%d <- %d\n%d <- %d\n", me->id, me->id * 2 + 1, me->id, me->id * 2 + 2);
-	}*/
 
   p_finalize(me);
 

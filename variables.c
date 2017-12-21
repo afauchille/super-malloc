@@ -1,9 +1,9 @@
 #include "variables.h"
 
 inline
-unsigned long pid_part(unsigned long var_id) { return var_id >> 24; }
+unsigned long pid_part(unsigned long var_id) { return var_id >> 24; } // extract first byte
 inline
-unsigned long vid_part(unsigned long var_id) { return var_id & 0xFFFFFF; }
+unsigned long vid_part(unsigned long var_id) { return var_id & 0xFFFFFF; } // extract last three bytes
 
 unsigned long var_alloc(Process *me)
 {
@@ -28,7 +28,7 @@ int var_get(Process *me, unsigned long var_id)
   }
   Variable var = me->data[i];
   if (!var.data) {
-    fprintf(stderr, "Variable requested for already freed vaiable: process %lu, %luth variable\n", pid_part(var_id), i);
+    fprintf(stderr, "Variable requested for already freed variable: process %lu, %luth variable\n", pid_part(var_id), i);
     return -1;
   }
   if (var.size == 1)
@@ -46,7 +46,7 @@ int var_set(Process *me, unsigned long var_id, int new_value)
   }
   Variable var = me->data[i];
   if (!var.data) {
-    fprintf(stderr, "Variable requested for already freed vaiable: process %lu, %luth variable\n", pid_part(var_id), i);
+    fprintf(stderr, "Variable requested for already freed variable: process %lu, %luth variable\n", pid_part(var_id), i);
     return 0;
   }
 
@@ -62,7 +62,7 @@ void var_free(Process *me, unsigned long var_id)
     return;
   }
   if (!me->data[i].data) {
-    fprintf(stderr, "Variable free requested for already freed vaiable: process %lu, %luth variable\n", pid_part(var_id), i);
+    fprintf(stderr, "Variable free requested for already freed variable: process %lu, %luth variable\n", pid_part(var_id), i);
     return;
   }
   Variable *var = me->data + i;
