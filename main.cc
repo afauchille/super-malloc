@@ -13,7 +13,8 @@ Process p_init(int argc, char **argv)
   MPI_Comm_size(MPI_COMM_WORLD, &me.nb_id); // world size is thereby the number of ids
 
   me.data = (Variable*)malloc(INIT_SIZE * sizeof(Variable));
-  me.size = INIT_SIZE;
+  me.size = 0;
+  me.capacity = INIT_SIZE;
   return me;
 }
 

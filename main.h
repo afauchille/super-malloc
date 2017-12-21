@@ -21,4 +21,5 @@ typedef struct
   int nb_id;
   Variable *data;
   size_t size;
+  size_t capacity;
 } Process;
