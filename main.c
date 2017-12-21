@@ -33,13 +33,11 @@ void p_finalize(Process *me)
 /* Simple wrapper for sending one int */
 void simple_send(int *data, int id_dest)
 {
-  //printf("Sending from %d to %d\n", *data, id_dest); // debug
   MPI_Send(data, 1, MPI_INT, id_dest, 0, MPI_COMM_WORLD);
 }
 
-void simple_send_UL(unsigned long *data, int id_dest, int id)
+void simple_send_UL(unsigned long *data, int id_dest)
 {
-  //  printf("Sending (%lu, %lu) from %d to %d\n", pid_part(*data), vid_part(*data), id, id_dest);
   MPI_Send(data, 1, MPI_UNSIGNED_LONG, id_dest, 0, MPI_COMM_WORLD);
 }
 
@@ -60,17 +58,14 @@ void send_sons_same_value(int *data, Process *me)
 
 
 /* Simple wrapper for receiving one int */
-void simple_recv(int *data, int id_from, int id) // last param only used in print
+void simple_recv(int *data, int id_from)
 {
-  //printf("Receiving from %d to %d\n", id_from, id); // debug
   MPI_Recv(data, 1, MPI_INT, id_from, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
-void simple_recv_UL(unsigned long *data, int id_from, int id) // last param only used in print
+void simple_recv_UL(unsigned long *data, int id_from)
 {
-  // printf("Receiving from %d to %d\n", id_from, id); // debug
   MPI_Recv(data, 1, MPI_UNSIGNED_LONG, id_from, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-  //  printf("Receiving from %d to %d Done.\n", id_from, id); // debug
 }
 
 void recv_sons_UL(unsigned long *data1, unsigned long *data2, Process *me)
@@ -78,14 +73,13 @@ void recv_sons_UL(unsigned long *data1, unsigned long *data2, Process *me)
   int son1 = 2 * me->id + 1;
   int son2 = son1 + 1;
   if (son1 < me->nb_id)
-    simple_recv_UL(data1, son1, me->id);
+    simple_recv_UL(data1, son1);
   if (son2 < me->nb_id)
-    simple_recv_UL(data2, son2, me->id);
+    simple_recv_UL(data2, son2);
 }
 
 int up_pow2(int n)
 {
-  //  n -= 1;
   int pow = 0;
   while (n >>= 1)
     pow++;
@@ -107,7 +101,7 @@ void check_tree(Process *me)
     else if (me->id < i)
       send_sons_same_value(&me->id, me);
     else if (me->id < 2 * i)
-      simple_recv(&data, (me->id - 1) / 2, me->id);
+      simple_recv(&data, (me->id - 1) / 2);
   }
 
   MPI_Barrier(MPI_COMM_WORLD); // sync all processes
@@ -143,7 +137,7 @@ unsigned long alloc(Process *me)
       send_sons(&data1, &data2, me);
     }
     else if (me->id < 2 * i)
-      simple_recv(&status, (me->id - 1) / 2, me->id);
+      simple_recv(&status, (me->id - 1) / 2);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -157,11 +151,10 @@ unsigned long alloc(Process *me)
 
   for (int i = up_pow2(me->nb_id); i != 2; i /= 2)
   {
-    int ri = i - 2; // correction to get correct max index: 0, 2, 6, 14, ...
     if (me->id > i - 2)
       ; // do nothing
-    else if (me->id >= (i - 2) / 2)
-      simple_send_UL(&var_id, (me->id - 1) / 2, me->id);
+    else if (me->id >= (i - 2) / 2) // tests values are a bit odd but are theorically correct
+      simple_send_UL(&var_id, (me->id - 1) / 2);
     else if (me->id > i / 4 - 2)
     {
       unsigned long data1 = -1;
@@ -194,21 +187,11 @@ int main(int argc, char **argv)
   Process process = p_init(argc, argv);
   Process *me = &process;
 
-  //check_tree(me);
+  check_tree(me);
 
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
-  alloc(me);
+
+  /* for (int i = 0; i < 10; ++i)
+    alloc(me);*/
 
   p_finalize(me);
 
