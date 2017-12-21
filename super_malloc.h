@@ -12,13 +12,14 @@
 #  define INIT_SIZE 10
 #  define GROWTH_FACTOR 1.5
 
+/* OP macro funcion */
+#  define min(X, Y) ((X) < (Y) ? (X) : (Y))
 
 typedef struct
 {
   size_t size;
   int *data;
 } Variable;
-
 
 typedef struct
 {
@@ -27,6 +28,8 @@ typedef struct
   Variable *data;
   size_t size;
   size_t capacity;
+  size_t s1min_size;
+  size_t s2min_size;
 } Process;
 
 /*************

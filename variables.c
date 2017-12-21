@@ -3,7 +3,7 @@
 inline
 unsigned long pid_part(unsigned long var_id) { return var_id >> 24; }
 inline
-unsigned long vid_part(unsigned long var_id) { return var_id & 0xFF; }
+unsigned long vid_part(unsigned long var_id) { return var_id & 0xFFFFFF; }
 
 unsigned long var_alloc(Process *me)
 {
