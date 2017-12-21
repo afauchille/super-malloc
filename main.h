@@ -11,7 +11,7 @@
 typedef struct
 {
   size_t size;
-  void *data;
+  int *data;
 } Variable;
 
 

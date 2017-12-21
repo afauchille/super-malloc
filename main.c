@@ -4,6 +4,11 @@
 #include <mpi.h>
 
 
+
+/*******************
+ * Process helpers *
+ *******************/
+
 /* Initialize MPI and return process structure containg relevant data */
 Process p_init(int argc, char **argv)
 {
@@ -18,11 +23,12 @@ Process p_init(int argc, char **argv)
   return me;
 }
 
-void p_finalize(Process me)
+void p_finalize(Process *me)
 {
-  for (size_t i = 0; i < me.size; ++i)
-    free(me.data[i].data);
-  free(me.data);
+  for (size_t i = 0; i < me->size; ++i)
+    if (me->data[i].data)
+      free(me->data[i].data);
+  free(me->data);
 }
 
 /* Simple wrapper for sending one int */
@@ -39,7 +45,12 @@ void simple_recv(int *data, int id_from, int id) // last param only used in prin
   MPI_Recv(data, 1, MPI_INT, id_from, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
-unsigned long alloc(Process *me)
+
+/*************
+ * Variables *
+ *************/
+
+unsigned long var_alloc(Process *me)
 {
   if (me->size == me->capacity - 1)
   {
@@ -49,8 +60,59 @@ unsigned long alloc(Process *me)
   unsigned long var_id = (me->id << 24) | me->size;
   Variable *var = me->data + me->size++;
   var->size = 1;
-  var->data = malloc(sizeof(MPI_INT));
+  var->data = malloc(sizeof(int));
   return var_id;
+}
+
+int var_get(Process *me, unsigned long var_id)
+{
+  unsigned long i = var_id & 0xFF;
+  if (i > me->size) {
+    fprintf(stderr, "Variable requested with wrong var_id: process %lu, %luth variable\n", var_id >> 24, i);
+    return -1;
+  }
+  Variable var = me->data[i];
+  if (!var.data) {
+    fprintf(stderr, "Variable requested for already freed vaiable: process %lu, %luth variable\n", var_id >> 24, i);
+    return -1;
+  }
+  if (var.size == 1)
+    return *var.data;
+  return -1; // size > 1 not implemented yet
+}
+
+// Waring: not thread-safe-or-whatever-it-is-called-in-the-mpi-world
+int var_set(Process *me, unsigned long var_id, int new_value)
+{
+  unsigned long i = var_id & 0xFF;
+  if (i > me->size) {
+    fprintf(stderr, "Variable requested with wrong var_id: process %lu, %luth variable\n", var_id >> 24, i);
+    return 0;
+  }
+  Variable var = me->data[i];
+  if (!var.data) {
+    fprintf(stderr, "Variable requested for already freed vaiable: process %lu, %luth variable\n", var_id >> 24, i);
+    return 0;
+  }
+
+  *var.data = new_value;
+  return 1;
+}
+
+void var_free(Process *me, unsigned long var_id)
+{
+  unsigned long i = var_id & 0xFF;
+  if (i > me->size) {
+    fprintf(stderr, "Variable free requested with wrong var_id: process %lu, %luth variable\n", var_id >> 24, i);
+    return;
+  }
+  if (!me->data[i].data) {
+    fprintf(stderr, "Variable free requested for already freed vaiable: process %lu, %luth variable\n", var_id >> 24, i);
+    return;
+  }
+  Variable *var = me->data + i;
+  var->data = NULL;
+  free(var->data);
 }
 
 void print_var_id(unsigned long var_id)
@@ -58,6 +120,8 @@ void print_var_id(unsigned long var_id)
   printf("Process %lu, %luth variable\n", var_id >> 24, var_id & 0xFF);
 }
 
+
+/****************************************/
 
 void check_tree(Process *me)
 {
@@ -81,9 +145,20 @@ void check_tree(Process *me)
 
 int main(int argc, char **argv)
 {
-  Process me = p_init(argc, argv);
+  Process process = p_init(argc, argv);
+  Process *me = &process;
 
-  check_tree(&me);
+  check_tree(me);
+
+  if (me->id == 2)
+  {
+    unsigned long var_id = var_alloc(me);
+    var_set(me, var_id, 42);
+    printf("Value: %d\n", var_get(me, var_id));
+    var_set(me, var_id, 70);
+    printf("Value: %d\n", var_get(me, var_id));
+    var_free(me, var_id);
+  }
 
   p_finalize(me);
 
