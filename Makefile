@@ -1,4 +1,4 @@
-SRC = main.cc
+SRC = main.c
 CFLAGS = -Wall -Wextra
 BIN = bin
 
