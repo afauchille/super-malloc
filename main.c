@@ -54,8 +54,8 @@ void check_tree(Process *me)
       ; // already done, test is for clarity purpose
     else if (me->id < i) {
       for (int id_dest = 2 * me->id + 1; id_dest < 2 * me->id + 3; ++id_dest)
-	if (id_dest < me->nb_id)
-	  simple_send(&me->id, id_dest);
+        if (id_dest < me->nb_id)
+          simple_send(&me->id, id_dest);
     }
     else if (me->id < 2 * i)
       simple_recv(&data, (me->id - 1) / 2, me->id);
@@ -75,6 +75,7 @@ int main(int argc, char **argv)
   if (me->id == 2)
   {
     unsigned long var_id = var_alloc(me);
+    printf("Alloc at id: %d\n", var_id);
     print_var_id(var_id);
     var_set(me, var_id, 42);
     printf("Value: %d\n", var_get(me, var_id));
